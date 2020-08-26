@@ -1,9 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { Image, Button, Card, CardDeck, CardColumns } from "react-bootstrap";
+import {
+  Image,
+  Button,
+  Card,
+  CardColumns,
+  Spinner,
+  Row,
+} from "react-bootstrap";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Compressor from "compressorjs";
+import { CopyToClipboard } from "react-copy-to-clipboard";
 import useAuth from "../../hooks/auth";
 import useBlog from "../../hooks/blog";
 import { NavBar } from "../../components/NavBar";
@@ -13,6 +21,7 @@ export default function Transactions() {
   const [urls, setUrls] = useState([]);
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [copied, setCopied] = useState(null);
 
   const { signOut, data, error } = useAuth();
   const {
@@ -21,6 +30,7 @@ export default function Transactions() {
     uploadBlogImage,
     loading,
     deleteImage,
+    deleting,
   } = useBlog();
   useEffect(() => {
     getAllImgages().then((res) => setUrls(res));
@@ -38,11 +48,18 @@ export default function Transactions() {
     uploadBlogImage(file).then((res) => setUrls([res, ...urls]));
   };
   const handleDelete = (e) => {
-    deleteImage(e.fileName, e.id).then(()=> {
-        const remUrls = urls.filter(url => url.id !== e.id)
-        setUrls(remUrls);
-    })
-  }
+    deleteImage(e.fileName, e.id).then(() => {
+      const remUrls = urls.filter((url) => url.id !== e.id);
+      setUrls(remUrls);
+    });
+  };
+
+  const handleCopy = (id) => {
+    setCopied(id);
+    const timer = setTimeout(() => {
+      setCopied(null);
+    }, 500);
+  };
 
   const uid = data && data.uid;
 
@@ -68,6 +85,7 @@ export default function Transactions() {
       });
     }
   }
+
   return (
     <div className="container">
       <Head>
@@ -95,7 +113,7 @@ export default function Transactions() {
           <div className="preview" style={{ textAlign: "center", margin: 10 }}>
             {previewUrl && <Image src={previewUrl} width={150} thumbnail />}
           </div>
-          <div className="img-container">
+          <div className="img-form-container">
             <form onSubmit={handleSubmit}>
               <input
                 style={{ display: "none" }}
@@ -127,12 +145,26 @@ export default function Transactions() {
               }
             >
               <div className="images">
-                <CardColumns>
+                <Row>
                   {urls.map((e) => (
-                    <Card key={e.id} style={{width: '18rem'}}>
+                    <Card key={e.id} className="card col-sm-4">
                       <Card.Img variant="top" src={e.url} />
                       <Card.Body>
-                        <Card.Text>{e.url}</Card.Text>
+                        <CopyToClipboard
+                          text={e.url}
+                          onCopy={() => handleCopy(e.id)}
+                        >
+                          <span
+                            className={`badge badge-${
+                              copied === e.id ? "success" : "info"
+                            }`}
+                          >
+                            Copy image url
+                          </span>
+                        </CopyToClipboard>
+                        {copied === e.id ? (
+                          <span className="copied">copied !</span>
+                        ) : null}
                         <Card.Text>
                           <small className="text-muted">
                             {new Date(e.date).toDateString()}
@@ -140,16 +172,28 @@ export default function Transactions() {
                         </Card.Text>
                       </Card.Body>
                       <Card.Footer>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleDelete(e)}
-                        >
-                          DELETE
-                        </Button>
+                        {deleting === e.id ? (
+                          <Button variant="secondary" disabled>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              role="status"
+                              aria-hidden="true"
+                            />
+                            deleting...
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="danger"
+                            onClick={() => handleDelete(e)}
+                          >
+                            DELETE
+                          </Button>
+                        )}
                       </Card.Footer>
                     </Card>
                   ))}
-                </CardColumns>
+                </Row>
               </div>
             </InfiniteScroll>
           </div>
@@ -236,22 +280,28 @@ export default function Transactions() {
           right: 15px;
         }
 
+        .img-form-container {
+          width: fit-content;
+          margin: auto;
+        }
         .images {
-          margin: 50px 0 !important;
+          margin: 50px !important;
+        }
+        .card {
+          width: 100%;
+          padding: 20px 10px !important;
+        }
+        span.badge {
+          cursor: pointer;
+        }
+        .copied {
+          color: #64dd17;
+          margin: 0 10px;
         }
 
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
-          }
-          @media (max-width: 576px) {
-            .card-items {
-              padding-left: 20px;
-            }
-            .card {
-              width: 70vw;
-            }
+        @media (max-width: 576px) {
+          .images {
+            margin: 50px 5px !important;
           }
         }
       `}</style>

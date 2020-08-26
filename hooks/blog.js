@@ -8,6 +8,7 @@ function useBlog() {
   const [updateOpen, setUPdateOpen] = useState(false);
   const [lastImage, setLastImage] = useState(null);
   const [hasMoreImages, setHasMoreImages] = useState(true);
+  const [deleting, setDeleting] = useState(null);
 
   const { db, storageRef } = app;
 
@@ -110,12 +111,28 @@ function useBlog() {
   };
 
   const deleteImage = async (fileName, id) => {
+    setDeleting(id)
     var ref = storageRef.child(`blog-images/${fileName}`);
     await ref.delete();
     try {
       await db.collection("blogImages")
         .doc(id)
         .delete();
+        setDeleting(null);
+      return window.alert("Image successfully deleted!");
+    }
+    catch (error) {
+      console.log("Error deleting file");
+    }
+  };
+
+  const deleteBlogPost = async (id) => {
+    setDeleting(id)
+    try {
+      await db.collection("blog")
+        .doc(id)
+        .delete();
+        setDeleting(null);
       return window.alert("Image successfully deleted!");
     }
     catch (error) {
@@ -138,6 +155,8 @@ function useBlog() {
     getAllImgages,
     hasMoreImages,
     deleteImage,
+    deleting,
+    deleteBlogPost
   };
 }
 

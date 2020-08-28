@@ -87,7 +87,7 @@ export const CreatePost = ({ createPost, loading, post, id }) => {
                 isValid={touched.category && !errors.category}
                 isInvalid={touched.category && !!errors.category}
               >
-                <option value="finance" defaultValue>
+                <option value="default" defaultValue>
                   select category
                 </option>
                 <option value="finance">Finance</option>

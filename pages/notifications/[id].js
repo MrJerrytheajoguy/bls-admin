@@ -28,16 +28,13 @@ export default function Transactions() {
   const { id } = router.query;
   useEffect(() => {
     (async function () {
-      id &&
-        data &&
-        data.uid &&
-        getSingleMessage(id).then((res) => setMessage(res));
+      id && getSingleMessage(id).then((res) => setMessage(res));
     })();
-  }, [id, data]);
+  }, [id]);
 
   const uid = data && data.uid;
 
-  const cb = () => getSingleMessage(id).then((res) => setMessage(res))
+  const cb = () => getSingleMessage(id).then((res) => setMessage(res));
   const details = Object.keys(message).length && {
     id,
     cb,

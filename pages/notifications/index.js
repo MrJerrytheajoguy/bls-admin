@@ -15,8 +15,6 @@ export default function Transactions() {
     data && data.uid && getAllMessages().then((res) => setMessages(res));
   }, [data]);
 
-  console.log("message-update:", messages);
-  console.log(hasMore);
   const next = () => {
     getAllMessages().then((res) => setMessages([...messages, ...res]));
   };

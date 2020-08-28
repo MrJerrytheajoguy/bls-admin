@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { app } from "../config/firebase";
 
 function useTransactions() {
-  const [userTransactions, setUserTransactions] = useState(null);
   const [depositOpen, setDepositOpen] = useState(false);
   const [transLoading, setTransLoading] = useState(false);
   const [withdrawalOpen, setWithdrawalOpen] = useState(false);
@@ -11,6 +10,8 @@ function useTransactions() {
   const [status, setStatus] = useState(null);
   const [updateOpen, setUpdateOpen] = useState(null);
   const [acctBal, setBal] = useState(null);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
 
   const { db } = app;
 
@@ -25,28 +26,46 @@ function useTransactions() {
     setErrorText(null);
   };
 
+  const getAllTransactions = async function () {
+    const transactions = lastVisible
+      ? db
+          .collection("transactions")
+          .orderBy("date", "desc")
+          .startAfter(lastVisible)
+          .limit(10)
+      : db.collection("transactions").orderBy("date", "desc").limit(10);
+    return transactions.get().then(function (documentSnapshots) {
+      if (!documentSnapshots.docs.length) setHasMore(false);
+      var lastVisible =
+        documentSnapshots.docs[documentSnapshots.docs.length - 1];
+      setLastVisible(lastVisible);
+      const transactions = [];
+      documentSnapshots.forEach((doc) => {
+        transactions.push({ id: doc.id, ...doc.data() });
+      });
+
+      return transactions;
+    });
+  };
+
   const getUserTransactions = async (uid) => {
-    console.log("uid", uid);
-    setTransLoading(true);
-    try {
-      const tr = await db
-        .collection("transactions")
-        .where("owner", "==", `${uid}`)
-        .get()
-        .then((result) => {
-          var transactions = [];
-          result.forEach(function (doc) {
-            transactions.push({ id: doc.id, ...doc.data() });
-          });
-          return transactions;
-        });
-      setUserTransactions(tr);
-      setTransLoading(false);
-      console.log("user-trans:", tr);
-    } catch (err) {
-      setTransLoading(false);
-      console.log(err);
-    }
+    return db
+      .collection("transactions")
+      .where("owner", "==", `${uid}`)
+      .get()
+      .then((result) => result.docs.map(e=>({id: e.id, ...e.data()})))
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  const getSingleTransaction = async (id) => {
+    console.log('helllo')
+    return db
+      .collection("transactions")
+      .doc(id)
+      .get()
+      .then((res) => ({ id: res.id, ...res.data() }));
   };
 
   const UpdateTransactionStatus = (owner, details) => {
@@ -55,7 +74,7 @@ function useTransactions() {
       details.type === "deposit"
         ? parseFloat(oldBalance) + parseFloat(details.amount)
         : parseFloat(oldBalance) - parseFloat(details.amount);
-    if(newBalance < 0) return;
+    if (newBalance < 0) return;
     setTransLoading(true);
     db.collection("transactions")
       .doc(details.id)
@@ -97,7 +116,7 @@ function useTransactions() {
       details.type === "deposit"
         ? parseFloat(oldBalance) + parseFloat(details.amount)
         : parseFloat(oldBalance) - parseFloat(details.amount);
-    if(newBalance < 0) return;
+    if (newBalance < 0) return;
     setTransLoading(true);
     db.collection("transactions")
       .add({
@@ -107,10 +126,8 @@ function useTransactions() {
         date: new Date().toISOString(),
         ownerDetails: {
           name: owner.displayName,
-          address: owner.address1,
-          city: owner.city,
-          state: owner.state,
-        },
+          location: owner.city
+        }
       })
       .then(() => {
         db.collection("users")
@@ -139,7 +156,6 @@ function useTransactions() {
   };
 
   return {
-    userTransactions,
     postTransaction,
     depositOpen,
     hideDeposit,
@@ -157,7 +173,10 @@ function useTransactions() {
     updateOpen,
     hideUpdateModal,
     openUpdateModal,
-    acctBal
+    acctBal,
+    hasMore,
+    getAllTransactions,
+    getSingleTransaction,
   };
 }
 

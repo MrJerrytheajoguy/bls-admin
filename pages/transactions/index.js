@@ -1,14 +1,23 @@
-import {useEffect} from 'react'
+import {useEffect, useState} from 'react'
 import Head from 'next/head'
-import cookies from 'next-cookies'
-import axios from 'axios'
 import Link from 'next/link'
+import InfiniteScroll from "react-infinite-scroll-component";
 import useAuth from '../../hooks/auth'
+import useTransactions from '../../hooks/transactions'
 import {NavBar} from '../../components/NavBar'
 
 export default function Transactions() {
-  const {signOut, data, error, transactions} = useAuth();
+  const [transactions, setTransactions] = useState([]);
+  const {signOut, data, error} = useAuth();
+  const {getAllTransactions, hasMore} = useTransactions();
 
+  useEffect(() => {
+    getAllTransactions().then(res=>setTransactions(res))
+  }, [])
+
+  const next = () => {
+    getAllTransactions().then((res) => setTransactions([...transactions, ...res]));
+  };
   const uid = data && data.uid;
 
   
@@ -33,13 +42,24 @@ export default function Transactions() {
        
 
         <div className="users">
-          {transactions && transactions.reverse().map((e,i)=>(
+        <InfiniteScroll
+              dataLength={transactions.length}
+              next={next}
+              hasMore={hasMore}
+              loader={<h4 style={{ textAlign: "center" }}>Loading...</h4>}
+              endMessage={
+                <p style={{ textAlign: "center" }}>
+                  <b>You have seen it all</b>
+                </p>
+              }
+            >
+          {transactions && transactions.map((e,i)=>(
               <Link href={`/transactions/${e.id}`} key={e.owner+i}>
               <a className="row shadow-sm transaction-card">
                   <div className='col-sm-6 details'>
                       <div>{new Date(e.date).toDateString()}</div>
                       <div>Owner: <strong>{e.ownerDetails.name}</strong></div>
-                      <div>Location: <strong>{e.ownerDetails.city}</strong></div>
+                      <div>Location: <strong>{e.ownerDetails.location}</strong></div>
                   </div>
                  <div className='col-sm-6 details'>
                  <div>Type: <strong>{e.type}</strong></div>
@@ -49,6 +69,7 @@ export default function Transactions() {
               </a>
               </Link>
           ))}
+          </InfiniteScroll>
         </div>
         </div>
       </main>

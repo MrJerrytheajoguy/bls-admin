@@ -25,7 +25,6 @@ function useBlog() {
       var lastVisible =
         documentSnapshots.docs[documentSnapshots.docs.length - 1];
       setLastVisible(lastVisible);
-      console.log("last", lastVisible);
       const posts = [];
       documentSnapshots.forEach((doc) => {
         posts.push({ id: doc.id, ...doc.data() });

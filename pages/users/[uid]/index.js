@@ -2,15 +2,19 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Modal, Button } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import useAuth from "../../../hooks/auth";
+import useUsers from "../../../hooks/users";
 import { NavBar } from "../../../components/NavBar";
 import useTransactions from "../../../hooks/transactions";
 import { WithDrawal } from "../../../components/transaction-request";
 import {SuccessAlert, FailureAlert} from '../../../components/alerts'
 
 export default function Transaction() {
-  const { signOut, data, error, users } = useAuth();
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+  const { signOut, data, error } = useAuth();
+  const {getSingleUser} = useUsers();
   const {
     withdrawalOpen,
     hideWithdrawal,
@@ -23,11 +27,12 @@ export default function Transaction() {
     errorText
   } = useTransactions();
 
-  const router = useRouter();
   const { uid } = router.query;
+useEffect(()=>{
+  uid && getSingleUser(uid).then(res=>setUser(res))
+}, [uid])
 
   const admin = data && data.uid;
-  const user = users && users.find((e) => e.uid == uid);
 
   return (
     <div className="container">

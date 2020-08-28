@@ -23,12 +23,10 @@ function useMessages() {
       var lastVisible =
         documentSnapshots.docs[documentSnapshots.docs.length - 1];
       setLastVisible(lastVisible);
-      console.log("last", lastVisible);
       const messages = [];
       documentSnapshots.forEach((doc) => {
         messages.push({ id: doc.id, ...doc.data() });
       });
-      console.log(messages);
       return messages;
     });
   };

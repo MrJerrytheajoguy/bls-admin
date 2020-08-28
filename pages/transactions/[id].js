@@ -4,25 +4,32 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import {Modal, Button} from 'react-bootstrap'
 import useAuth from '../../hooks/auth'
+import useUsers from '../../hooks/users'
 import {NavBar} from '../../components/NavBar'
 import useTransactions from '../../hooks/transactions'
 import {SuccessAlert, FailureAlert} from '../../components/alerts'
 import {SendBtn} from '../../components/SendBtn'
 
 export default function Transaction() {
-  const {signOut, data, error, transactions, users} = useAuth();
-  const {UpdateTransactionStatus, successText, errorText, hideAlert, transLoading, status, updateOpen, hideUpdateModal, openUpdateModal } = useTransactions();
-  const router = useRouter()
+  const [st, setSt] = useState(null)
+  const [owner, setOwner] = useState(null);
+  const {signOut, data, error} = useAuth();
+  const {getSingleUser} = useUsers()
+  const {UpdateTransactionStatus, successText, errorText, hideAlert, transLoading, status, updateOpen, hideUpdateModal, openUpdateModal, getSingleTransaction } = useTransactions();
+  const router = useRouter();
+
+  const {id} = router.query
+  useEffect(() => {
+    id && getSingleTransaction(id).then(res=>setSt(res))
+  }, [id])
+  useEffect(() => {
+    st && getSingleUser(st.owner).then(res=>setOwner(res))
+  }, [st])
 
   
   const uid = data && data.uid;
-  const { id } = router.query
-  const st = transactions && transactions.find(e=>e.id == id);
-  const owner = users && st && users.find(e=>e.uid == st.owner);
   const disabled = st && !!st.status || status;
   const reload = () => router.reload();
-  console.log(owner);
-  console.log(st);
 
   return (
     <div className="container">
@@ -55,7 +62,7 @@ export default function Transaction() {
 
         <div className='authorized'>
         
-          {st && users &&
+          {st && owner &&
             <div className="transactions">
                 <h3>TRANSACTION DETAILS</h3>
                 <h5>ID:  {st.id}</h5>
@@ -65,9 +72,9 @@ export default function Transaction() {
                       
                       <div>ACCOUNT NUMBER: <span><Link href={`/users/${st.owner}`}><a>{owner.phoneNumber}</a></Link></span></div>
                      <div>ACCOUNT BALANCE: <span>{owner.accountBalance || 0.00}</span><span onClick={reload} className='reload'>&#8634;</span></div>
-                      <div>NAME: <span>{st.ownerDetails.name}</span></div>
-                      <div>LOCATION: <span>{st.ownerDetails.city} {st.ownerDetails.state}</span></div>
-                    <div>ADDRESS: <span>{st.ownerDetails.address} </span></div>
+                      <div>NAME: <span>{owner.displayName}</span></div>
+                      <div>LOCATION: <span>{owner.city} {st.ownerDetails.state}</span></div>
+                    <div>ADDRESS: <span>{owner.address1} </span></div>
                   </div>
                  <div className='col-sm-6 transaction-details'>
                 <h6>TRANSACTION INFO</h6>

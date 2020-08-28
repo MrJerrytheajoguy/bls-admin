@@ -1,16 +1,23 @@
-import {useEffect} from 'react'
+import {useEffect, useState} from 'react'
 import Head from 'next/head'
-import cookies from 'next-cookies'
-import axios from 'axios'
 import Link from 'next/link'
+import InfiniteScroll from "react-infinite-scroll-component";
 import useAuth from '../../hooks/auth'
-// import useGetUsers from '../hooks/users'
+import useUsers from '../../hooks/users'
 import {NavBar} from '../../components/NavBar'
 
 export default function Users() {
-  const {signOut, data, error, users} = useAuth();
-  //const {users} = useGetUsers();
-  console.log('users:',users)
+  const [users, setUsers] = useState([]);
+  const {signOut, data, error} = useAuth();
+  const {getAllUsers, hasMore} = useUsers();
+  
+  useEffect(()=>{
+    getAllUsers().then(res=>setUsers(res));
+  }, [])
+
+  const next = () => {
+    getAllUsers().then((res) => setUsers([...users, ...res]));
+  };
 
   const uid = data && data.uid;
 
@@ -36,7 +43,18 @@ export default function Users() {
        
 
         <div className="users">
-          {users && users.filter(e=>e.city).map(user=>(
+        <InfiniteScroll
+              dataLength={users.length}
+              next={next}
+              hasMore={hasMore}
+              loader={<h4 style={{ textAlign: "center" }}>Loading...</h4>}
+              endMessage={
+                <p style={{ textAlign: "center" }}>
+                  <b>You have seen it all</b>
+                </p>
+              }
+            >
+          {users.filter(e=>e.city).map(user=>(
               <Link href={`/users/${user.uid}`} key={user.uid}>
               <a className="card shadow-sm">
                   <div className='user-image'>
@@ -50,6 +68,7 @@ export default function Users() {
               </a>
               </Link>
           ))}
+          </InfiniteScroll>
         </div>
         </div>
       </main>

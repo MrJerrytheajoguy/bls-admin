@@ -1,23 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import useAuth from "../../../hooks/auth";
+import useUsers from "../../../hooks/users";
 import useTransactions from "../../../hooks/transactions";
 import { NavBar } from "../../../components/NavBar";
-import { app } from "../../../config/firebase";
-import {
-  Deposit,
-  Withdrawal,
-  WithDrawal,
-} from "../../../components/transaction-request";
+import { Deposit } from "../../../components/transaction-request";
 import { Button } from "react-bootstrap";
 
 export default function Transactions() {
+  const [userTransactions, setUserTransactions] = useState([]);
+  const [user, setUser] = useState(null);
   const router = useRouter();
-  const { signOut, data, error, transactions, users } = useAuth();
+  const { signOut, data, error} = useAuth();
+  const {getSingleUser} = useUsers();
   const {
-    userTransactions,
     getUserTransactions,
     depositOpen,
     hideDeposit,
@@ -25,16 +23,19 @@ export default function Transactions() {
     postTransaction,
     transLoading,
   } = useTransactions();
-  const { db } = app;
+ 
   const { uid } = router.query;
-
   useEffect(() => {
-    const { uid } = router.query;
-    getUserTransactions(uid);
-  }, [db, users]);
-  console.log(userTransactions);
-  //const userTransactions = transactions && transactions.filter(e=> e.owner === uid);
-  const user = users && users.find((e) => e.uid == uid);
+   (async function(){
+    if(uid){
+      const user = await getSingleUser(uid);
+      const userTransactions = await getUserTransactions(uid);
+      setUser(user);
+      setUserTransactions(userTransactions);
+    }
+   })();
+  }, [uid]);
+
 
   const sortTransactions = (transactions) =>
     transactions.sort(function (a, b) {

@@ -146,7 +146,7 @@ export default function Transactions() {
             >
               <div className="images">
                 <Row>
-                  {urls.map((e) => (
+                  {urls.length ? urls.map((e) => (
                     <Card key={e.id} className="card col-sm-4">
                       <Card.Img variant="top" src={e.url} />
                       <Card.Body>
@@ -192,7 +192,7 @@ export default function Transactions() {
                         )}
                       </Card.Footer>
                     </Card>
-                  ))}
+                  )) : null}
                 </Row>
               </div>
             </InfiniteScroll>
